@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="grid">
+  <div class="card">
+    <h2>Live Status</h2>
+    <div id="statusBadge" class="badge">Loading…</div>
+    <p class="muted">Threshold: <span id="threshold">{{ slouch_threshold }}</span></p>
+    <div class="gauge">
+      <div class="gauge-bar">
+        <div id="gaugeFill" class="gauge-fill" style="width: 0%"></div>
+      </div>
+      <div class="gauge-label">
+        Slouch Probability: <span id="slouchProb">0.00</span>
+      </div>
+    </div>
+    <p class="muted small">Last sample: <span id="lastTs">—</span></p>
+  </div>
+
+
+ <div class="card">
+    <h2>Last 30 Minutes</h2>
+    <canvas id="tsChart"></canvas>
+  </div>
+
+
+  <div class="card">
+    <h2>Recent Events</h2>
+    <table class="table">
+      <thead>
+        <tr><th>Time (UTC)</th><th>Type</th><th>Prob</th></tr>
+      </thead>
+      <tbody id="eventsBody"><tr><td colspan="3">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>window.SLOUCH_THRESHOLD = parseFloat("{{ slouch_threshold }}");</script>
+<script src="/static/app.js"></script>
+{% endblock %}
