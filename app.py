@@ -16,7 +16,7 @@ SLOUCH_THRESHOLD = float(os.getenv("", "0.6"))
 
 
 app = Flask(__name__)
-app.config["KEY_NAME"] = os.getenv("KEY_NAME", "change-me")
+app.config["KEY"] = os.getenv("KEY", "change-me")
 
 
 # --- Helpers ---
