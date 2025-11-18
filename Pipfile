@@ -8,6 +8,10 @@ pylint = "*"
 black = "*"
 pymongo = "*"
 python-dotenv = "*"
+flask = "*"
+pytest = "*"
+pytest-flask = "*"
+coverage = "*"
 
 [dev-packages]
 
