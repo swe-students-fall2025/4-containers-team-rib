@@ -6,15 +6,13 @@ from flask import Flask, jsonify, render_template, request
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from dotenv import load_dotenv
 
+import db
+
 load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
 MONGO_DB = os.getenv("MONGO_DB", "posture")
-SLOUCH_THRESHOLD = float(os.getenv("SLOUCH_THRESHOLD", "0.6"))
-
-
-client = MongoClient(MONGO_URL)
-db = client[MONGO_DB]
+SLOUCH_THRESHOLD = float(os.getenv("", "0.6"))
 
 
 app = Flask(__name__)
@@ -31,8 +29,8 @@ def _iso(dt: datetime) -> str:
 # events: { ts: datetime, type: "enter_slouch"|"exit_slouch", prob: float }
 
 # Indexes (created once at startup)
-db["samples"].create_index([("ts", DESCENDING)])
-db["events"].create_index([("ts", DESCENDING)])
+db.samples.create_index([("ts", DESCENDING)])
+db.events.create_index([("ts", DESCENDING)])
 
 
 # --- Web pages ---
@@ -63,7 +61,8 @@ def api_metrics():
         minutes = int(request.args.get("minutes", 30))
     except ValueError:
         minutes = 30
-        since = datetime.utcnow() - timedelta(minutes=minutes)
+
+    since = datetime.utcnow() - timedelta(minutes=minutes)
 
     cur = db.samples.find({"ts": {"$gte": since}}).sort("ts", ASCENDING)
     series = [
