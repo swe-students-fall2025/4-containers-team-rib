@@ -5,16 +5,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-username = os.getenv("MONGO_USERNAME")
-password = os.getenv("MONGO_PASSWORD")
-app_name = os.getenv("APP_NAME")
+USERNAME = os.getenv("MONGO_USERNAME")
+PASSWORD = os.getenv("MONGO_PASSWORD")
+APP_NAME = os.getenv("APP_NAME")
+MONGO_DB = os.getenv("MONGO_DB", "posture")
 
 uri = (
-    f"mongodb+srv://{username}:{password}@ribs.xo4actr.mongodb.net/?appName={app_name}"
+    f"mongodb+srv://{USERNAME}:{PASSWORD}@ribs.xo4actr.mongodb.net/?appName={APP_NAME}"
 )
 
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi("1"))
+db = client[MONGO_DB]
+
+# collections created
+samples = db["samples"]
+events = db["events"]
+
 
 # Send a ping to confirm a successful connection
 try:
