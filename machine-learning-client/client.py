@@ -58,5 +58,6 @@ def ingest_dummy_sample(prob=0.5):
         log_event(event_type, doc["slouch_prob"])
     return doc
 
+
 if __name__ == "__main__":
     print(ingest_dummy_sample())
