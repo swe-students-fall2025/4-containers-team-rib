@@ -1,0 +1,4 @@
+0 thumbs-up
+1 thumbs-down
+2 peace
+3 non
