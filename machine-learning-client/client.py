@@ -3,7 +3,7 @@
 import os
 from datetime import datetime, timezone
 from pymongo import DESCENDING
-from db import db
+from db.db import db
 
 
 def _get_db():
