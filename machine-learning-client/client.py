@@ -2,25 +2,12 @@
 
 import os
 from datetime import datetime, timezone
-from pymongo import MongoClient, DESCENDING
-from pymongo.server_api import ServerApi
+from pymongo import DESCENDING
+import db
 
 
 def _get_db():
-    mongo_url = os.getenv("MONGO_URL")
-    db_name = os.getenv("MONGO_DB", "posture")
-
-    if mongo_url:
-        client = MongoClient(mongo_url)
-    else:
-        user = os.getenv("MONGO_USERNAME")
-        password = os.getenv("MONGO_PASSWORD")
-        host = os.getenv("MONGO_HOST", "ribs.xo4actr.mongodb.net")
-        app_name = os.getenv("APP_NAME", "RIBS")
-        uri = f"mongodb+srv://{user}:{password}@{host}/?appName={app_name}"
-        client = MongoClient(uri, server_api=ServerApi("1"))
-
-    return client[db_name]
+    return db
 
 
 db = _get_db()
