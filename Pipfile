@@ -12,6 +12,7 @@ flask = "*"
 pytest = "*"
 pytest-flask = "*"
 coverage = "*"
+pipenv = "*"
 
 [dev-packages]
 

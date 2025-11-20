@@ -1,4 +1,8 @@
 let chart;
+let poseModel, webcam, ctx, labelContainer, maxPredictions;
+let isRunning = false;
+
+const MODEL_URL = "/static/my-pose-model/";
 
 async function fetchJSON(url) {
     const res = await fetch(url);
@@ -16,6 +20,132 @@ function setGauge(prob) {
     const pct = Math.max(0, Math.min(1, prob)) * 100;
     document.getElementById("gaugeFill").style.width = pct.toFixed(1) + "%";
     document.getElementById("slouchProb").textContent = prob.toFixed(2);
+}
+
+// Send prediction to backend
+async function sendPrediction(slouchProb) {
+    try {
+        await fetch("/api/dev/ingest-sample", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ slouch_prob: slouchProb })
+        });
+    } catch (err) {
+        console.error("Failed to send prediction:", err);
+    }
+}
+
+// Initialize Teachable Machine Pose Model
+async function initPoseModel() {
+    const statusEl = document.getElementById("modelStatus");
+    const startBtn = document.getElementById("startButton");
+    const stopBtn = document.getElementById("stopButton");
+    
+    try {
+        statusEl.textContent = "Loading model...";
+        startBtn.disabled = true;
+        
+        const modelURL = MODEL_URL + "model.json";
+        const metadataURL = MODEL_URL + "metadata.json";
+        
+        // Load the model and metadata
+        poseModel = await tmPose.load(modelURL, metadataURL);
+        maxPredictions = poseModel.getTotalClasses();
+        
+        statusEl.textContent = "Starting webcam...";
+        
+        // Setup webcam
+        const size = 400;
+        const flip = true;
+        webcam = new tmPose.Webcam(size, size, flip);
+        await webcam.setup();
+        await webcam.play();
+        
+        // Setup canvas
+        const canvas = document.getElementById("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        ctx = canvas.getContext("2d");
+        
+        // Setup label container
+        labelContainer = document.getElementById("label-container");
+        labelContainer.innerHTML = "";
+        for (let i = 0; i < maxPredictions; i++) {
+            labelContainer.appendChild(document.createElement("div"));
+        }
+        
+        isRunning = true;
+        startBtn.style.display = "none";
+        stopBtn.style.display = "inline-block";
+        statusEl.textContent = "✓ Model running";
+        
+        // Start prediction loop
+        window.requestAnimationFrame(poseLoop);
+        
+    } catch (err) {
+        statusEl.textContent = "Error: " + err.message;
+        console.error(err);
+        startBtn.disabled = false;
+    }
+}
+
+async function poseLoop(timestamp) {
+    if (!isRunning) return;
+    
+    webcam.update();
+    await predictPose();
+    window.requestAnimationFrame(poseLoop);
+}
+
+async function predictPose() {
+    // Run pose estimation
+    const { pose, posenetOutput } = await poseModel.estimatePose(webcam.canvas);
+    
+    // Run classification
+    const prediction = await poseModel.predict(posenetOutput);
+    
+    // Display predictions
+    let slouchProb = 0;
+    for (let i = 0; i < maxPredictions; i++) {
+        const className = prediction[i].className;
+        const probability = prediction[i].probability;
+        
+        // Assuming first class is "slouching"
+        if (i === 0 || className.toLowerCase().includes("slouch")) {
+            slouchProb = probability;
+        }
+        
+        const classPrediction = className + ": " + probability.toFixed(2);
+        labelContainer.childNodes[i].innerHTML = classPrediction;
+    }
+    
+    // Send to backend every prediction (you can throttle this if needed)
+    await sendPrediction(slouchProb);
+    
+    // Draw pose on canvas
+    drawPose(pose);
+}
+
+function drawPose(pose) {
+    if (webcam.canvas) {
+        ctx.drawImage(webcam.canvas, 0, 0);
+        // Draw keypoints and skeleton
+        if (pose) {
+            const minPartConfidence = 0.5;
+            tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+            tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
+        }
+    }
+}
+
+function stopPoseModel() {
+    isRunning = false;
+    if (webcam) {
+        webcam.stop();
+    }
+    document.getElementById("startButton").style.display = "inline-block";
+    document.getElementById("stopButton").style.display = "none";
+    document.getElementById("modelStatus").textContent = "Model stopped";
 }
 
 async function refreshLatest() {
