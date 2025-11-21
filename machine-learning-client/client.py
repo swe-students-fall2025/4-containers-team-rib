@@ -1,12 +1,11 @@
 """ML client that writes posture samples and events to MongoDB"""
 
 import os
-import json
 import time
+from datetime import datetime, timezone
+
 import cv2
 import numpy as np
-import tensorflow as tf
-from datetime import datetime, timezone
 from pymongo import MongoClient, DESCENDING
 from pymongo.server_api import ServerApi
 
@@ -15,7 +14,8 @@ def _get_db():
     mongo_url = os.getenv("MONGO_URL")
     db_name = os.getenv("MONGO_DB", "posture")
 
-    if mongo_url:client = MongoClient(mongo_url)
+    if mongo_url:
+        client = MongoClient(mongo_url)
     else:
         user = os.getenv("MONGO_USERNAME")
         password = os.getenv("MONGO_PASSWORD")
@@ -35,15 +35,19 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), "my-pose-model")
 
 
 def load_model():
+    """Load the posture estimation model."""
     try:
         try:
             import tensorflowjs as tfjs
+
             model = tfjs.converters.load_keras_model(MODEL_PATH)
             print(f"Model loaded successfully from {MODEL_PATH}")
             return model
         except ImportError:
             print("tensorflowjs not installed. Install with: pip install tensorflowjs")
-            print("Then convert the model with: tensorflowjs_converter --input_format=tfjs_layers_model --output_format=keras_saved_model my-pose-model/ converted_model/")
+            print(
+                "Then convert the model with: tensorflowjs_converter --input_format=tfjs_layers_model --output_format=keras_saved_model my-pose-model/ converted_model/"
+            )
             return None
     except Exception as e:
         print(f"Error loading model: {e}")
@@ -51,6 +55,7 @@ def load_model():
 
 
 def get_webcam_frame():
+    """Capture a frame from the webcam."""
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Error: Could not open webcam")
@@ -59,14 +64,14 @@ def get_webcam_frame():
         print("  - Camera permissions not granted")
         print("  - No camera detected")
         return None
-    
+
     ret, frame = cap.read()
     cap.release()
-    
+
     if not ret:
         print("Error: Could not read frame from webcam")
         return None
-    
+
     frame = cv2.resize(frame, (257, 257))
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame = frame.astype(np.float32) / 255.0
@@ -75,6 +80,7 @@ def get_webcam_frame():
 
 
 def predict_posture(model, frame):
+    """Predict the posture based on the frame."""
     try:
         predictions = model.predict(frame)
         slouch_prob = predictions[0][0]
@@ -84,8 +90,8 @@ def predict_posture(model, frame):
         return None
 
 
-
 def log_event(event_type: str, prob: float):
+    """Log an event to the database."""
     event = {
         "ts": datetime.now(timezone.utc),
         "type": event_type,
@@ -96,11 +102,13 @@ def log_event(event_type: str, prob: float):
 
 
 def _latest_label():
+    """Get the latest label from the samples."""
     doc = db.samples.find_one(sort=[("ts", DESCENDING)])
     return doc.get("label") if doc else None
 
 
 def ingest_dummy_sample(prob=0.5):
+    """Ingest a dummy sample for testing."""
     previous_label = _latest_label()
     doc = {
         "ts": datetime.now(timezone.utc),
@@ -115,16 +123,17 @@ def ingest_dummy_sample(prob=0.5):
 
 
 def ingest_live_sample(model):
+    """Ingest a live sample from the webcam."""
     frame = get_webcam_frame()
     if frame is None:
         print("Failed to capture webcam frame")
         return None
-    
+
     slouch_prob = predict_posture(model, frame)
     if slouch_prob is None:
         print("Failed to get prediction")
         return None
-    
+
     previous_label = _latest_label()
     doc = {
         "ts": datetime.now(timezone.utc),
@@ -132,38 +141,42 @@ def ingest_live_sample(model):
         "label": "slouch" if slouch_prob >= threshold else "good",
     }
     db.samples.insert_one(doc)
-    
+
     if previous_label != doc["label"]:
         event_type = "enter_slouch" if doc["label"] == "slouch" else "exit_slouch"
         log_event(event_type, doc["slouch_prob"])
-    
+
     return doc
 
 
 def run_monitoring_loop(interval=5):
+    """Run the posture monitoring loop."""
     model = load_model()
     if model is None:
         print("Failed to load model. Exiting.")
         return
-    
+
     print(f"Starting posture monitoring (interval: {interval}s)")
     print(f"Slouch threshold: {threshold}")
     print("Press Ctrl+C to stop")
-    
+
     try:
         while True:
             result = ingest_live_sample(model)
             if result:
-                print(f"{result['ts']}: {result['label']} (prob: {result['slouch_prob']:.2f})")
+                print(
+                    f"{result['ts']}: {result['label']} (prob: {result['slouch_prob']:.2f})"
+                )
             time.sleep(interval)
     except KeyboardInterrupt:
         print("\nStopped monitoring")
 
 
 def test_camera():
+    """Test the camera access."""
     print("Testing camera access...")
     cap = cv2.VideoCapture(0)
-    
+
     if not cap.isOpened():
         print("❌ Camera could not be opened")
         print("\nTroubleshooting:")
@@ -171,10 +184,10 @@ def test_camera():
         print("  2. Verify camera permissions in Windows Settings")
         print("  3. Try restarting your computer")
         return False
-    
+
     ret, frame = cap.read()
     cap.release()
-    
+
     if ret:
         print(f"✓ Camera working! Frame captured: {frame.shape}")
         return True
@@ -185,6 +198,7 @@ def test_camera():
 
 if __name__ == "__main__":
     import sys
+
     if "--test-camera" in sys.argv:
         test_camera()
     elif "--live" in sys.argv:
