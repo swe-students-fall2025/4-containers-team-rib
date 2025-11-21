@@ -92,22 +92,42 @@ async function poseLoop(timestamp) {
 
 async function predictPose() {
     const { pose, posenetOutput } = await poseModel.estimatePose(webcam.canvas);
-    
+
     const prediction = await poseModel.predict(posenetOutput);
-    
+
     let slouchProb = 0;
+    let slouchProbFromClass = null;
+    let notSlouchProbFromClass = null;
+
     for (let i = 0; i < maxPredictions; i++) {
         const className = prediction[i].className;
         const probability = prediction[i].probability;
-        
-        if (i === 0 || className.toLowerCase().includes("slouch")) {
-            slouchProb = probability;
+        const name = className.toLowerCase();
+
+        const isNotSlouch =
+            name.includes("not") ||
+            name.includes("good") ||
+            name.includes("upright");
+        const isSlouch = name.includes("slouch");
+
+        if (isNotSlouch) {
+            notSlouchProbFromClass = probability;
+        } else if (isSlouch) {
+            slouchProbFromClass = probability;
         }
-        
+
         const classPrediction = className + ": " + probability.toFixed(2);
         labelContainer.childNodes[i].innerHTML = classPrediction;
     }
-    
+
+    if (slouchProbFromClass !== null) {
+        slouchProb = slouchProbFromClass;
+    } else if (notSlouchProbFromClass !== null) {
+        slouchProb = 1 - notSlouchProbFromClass;
+    }
+
+    slouchProb = Math.max(0, Math.min(1, slouchProb));
+
     await sendPrediction(slouchProb);
     
     drawPose(pose);
@@ -147,6 +167,7 @@ async function refreshSeries() {
     if (!data.ok) return;
     const labels = data.series.map(p => p.ts);
     const vals = data.series.map(p => p.slouch_prob);
+    const threshold = Number.isFinite(window.SLOUCH_THRESHOLD) ? window.SLOUCH_THRESHOLD : 0.6;
 
     if (!chart) {
         const ctx = document.getElementById("tsChart");
@@ -177,6 +198,17 @@ async function refreshSeries() {
         chart.data.datasets[0].data = vals;
         chart.update();
     }
+
+    // Compute simple posture splits for the displayed window.
+    const total = vals.length;
+    const slouchCount = vals.filter(v => v >= threshold).length;
+    const slouchPct = total ? (slouchCount / total) * 100 : 0;
+    const goodPct = total ? 100 - slouchPct : 0;
+
+    const slouchEl = document.getElementById("metricSlouch");
+    const goodEl = document.getElementById("metricGood");
+    if (slouchEl) slouchEl.textContent = `Slouching: ${slouchPct.toFixed(1)}%`;
+    if (goodEl) goodEl.textContent = `Good posture: ${goodPct.toFixed(1)}%`;
 }
 
 async function refreshEvents() {
