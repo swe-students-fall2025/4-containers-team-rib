@@ -12,6 +12,8 @@ flask = "*"
 pytest = "*"
 pytest-flask = "*"
 coverage = "*"
+opencv-python = "*"
+numpy = "*"
 
 [dev-packages]
 

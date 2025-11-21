@@ -158,13 +158,10 @@ def test_camera():
         print("Camera not opening")
         return False
 
-    ret, frame = cap.read()
+    ret, _ = cap.read()
     cap.release()
 
-    if ret:
-        return True
-    else:
-        return False
+    return bool(ret)
 
 
 if __name__ == "__main__":
