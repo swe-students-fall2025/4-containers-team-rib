@@ -36,7 +36,6 @@ threshold = float(os.getenv("SLOUCH_THRESHOLD", "0.6"))
 def load_model():
     """Load the posture estimation model."""
     print("tensorflowjs import and related code removed.")
-    return None
 
 
 def get_webcam_frame():
@@ -62,7 +61,7 @@ def predict_posture(model, frame):
         predictions = model.predict(frame)
         slouch_prob = predictions[0][0]
         return float(slouch_prob)
-    except Exception as e:
+    except (AttributeError, IndexError, ValueError) as e:
         print(f"Error during prediction: {e}")
         return None
 
@@ -128,7 +127,8 @@ def ingest_live_sample(model):
 
 def run_monitoring_loop(interval=5):
     """Run the posture monitoring loop."""
-    model = load_model()
+    load_model()
+    model = None  # Model loading not implemented
     if model is None:
         print("Failed to load model. Exiting.")
         return
