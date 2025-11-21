@@ -9,6 +9,8 @@ import numpy as np
 from pymongo import MongoClient, DESCENDING
 from pymongo.server_api import ServerApi
 
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "my-pose-model")
+
 
 def _get_db():
     mongo_url = os.getenv("MONGO_URL")
@@ -30,46 +32,21 @@ def _get_db():
 db = _get_db()
 threshold = float(os.getenv("SLOUCH_THRESHOLD", "0.6"))
 
-# Load model
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "my-pose-model")
-
 
 def load_model():
     """Load the posture estimation model."""
-    try:
-        try:
-            import tensorflowjs as tfjs
-
-            model = tfjs.converters.load_keras_model(MODEL_PATH)
-            print(f"Model loaded successfully from {MODEL_PATH}")
-            return model
-        except ImportError:
-            print("tensorflowjs not installed. Install with: pip install tensorflowjs")
-            print(
-                "Then convert the model with: tensorflowjs_converter --input_format=tfjs_layers_model --output_format=keras_saved_model my-pose-model/ converted_model/"
-            )
-            return None
-    except Exception as e:
-        print(f"Error loading model: {e}")
-        return None
+    print("tensorflowjs import and related code removed.")
+    return None
 
 
 def get_webcam_frame():
     """Capture a frame from the webcam."""
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        print("Error: Could not open webcam")
-        print("Possible issues:")
-        print("  - Camera is being used by another application")
-        print("  - Camera permissions not granted")
-        print("  - No camera detected")
         return None
-
     ret, frame = cap.read()
     cap.release()
-
     if not ret:
-        print("Error: Could not read frame from webcam")
         return None
 
     frame = cv2.resize(frame, (257, 257))
@@ -178,21 +155,15 @@ def test_camera():
     cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
-        print("❌ Camera could not be opened")
-        print("\nTroubleshooting:")
-        print("  1. Check if another app is using the camera (Teams, Zoom, etc.)")
-        print("  2. Verify camera permissions in Windows Settings")
-        print("  3. Try restarting your computer")
+        print("Camera not opening")
         return False
 
     ret, frame = cap.read()
     cap.release()
 
     if ret:
-        print(f"✓ Camera working! Frame captured: {frame.shape}")
         return True
     else:
-        print("❌ Camera opened but couldn't capture frame")
         return False
 
 
