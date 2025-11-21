@@ -99,6 +99,21 @@ body {
     font-variant-numeric: tabular-nums; 
 }
 
+.metrics-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.metric-pill {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #0e1623;
+    font-variant-numeric: tabular-nums;
+}
+
 .table { 
     width: 100%; 
     border-collapse: collapse; 
