@@ -12,6 +12,8 @@ flask = "*"
 pytest = "*"
 pytest-flask = "*"
 coverage = "*"
+pipenv = "*"
+tomli = "*"
 
 [dev-packages]
 
