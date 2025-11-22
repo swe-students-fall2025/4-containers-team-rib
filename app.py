@@ -1,4 +1,5 @@
 """Flask web app exposing posture dashboard APIs."""
+
 from datetime import datetime, timedelta
 import os
 from typing import Any, Dict
@@ -24,9 +25,11 @@ app.config["KEY"] = os.getenv("KEY", "change-me")
 def _iso(dt: datetime) -> str:
     return dt.replace(microsecond=0).isoformat() + "Z"
 
+
 # Indexes (created once at startup)
 db.samples.create_index([("ts", DESCENDING)])
 db.events.create_index([("ts", DESCENDING)])
+
 
 # --- Web pages ---
 @app.get("/")

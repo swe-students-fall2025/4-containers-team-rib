@@ -1,4 +1,5 @@
 """Unit tests for the ML client helpers."""
+
 # pylint: disable=missing-function-docstring,too-few-public-methods,invalid-name,unnecessary-lambda,unused-argument,mixed-line-endings
 
 import types
@@ -92,7 +93,9 @@ def test_predict_posture_success():
         def predict(self, frame):
             return [[0.3]]
 
-    assert client.predict_posture(_Model(), frame=np.zeros((1, 1))) == pytest.approx(0.3)
+    assert client.predict_posture(_Model(), frame=np.zeros((1, 1))) == pytest.approx(
+        0.3
+    )
 
 
 def test_ingest_live_sample_records_exit_event(monkeypatch):
@@ -109,7 +112,9 @@ def test_ingest_live_sample_records_exit_event(monkeypatch):
 
     monkeypatch.setattr(client, "predict_posture", _predict_exit)
 
-    doc = client.ingest_live_sample(model=types.SimpleNamespace(predict=lambda f: [[0.2]]))
+    doc = client.ingest_live_sample(
+        model=types.SimpleNamespace(predict=lambda f: [[0.2]])
+    )
     assert doc is not None
     assert doc["label"] == "good"
     assert len(fake_db.events.docs) == 1
@@ -129,7 +134,9 @@ def test_ingest_live_sample_records_enter_event(monkeypatch):
 
     monkeypatch.setattr(client, "predict_posture", _predict_enter)
 
-    doc = client.ingest_live_sample(model=types.SimpleNamespace(predict=lambda f: [[0.9]]))
+    doc = client.ingest_live_sample(
+        model=types.SimpleNamespace(predict=lambda f: [[0.9]])
+    )
     assert doc["label"] == "slouch"
     assert len(fake_db.events.docs) == 1
     assert fake_db.events.docs[0]["type"] == "enter_slouch"

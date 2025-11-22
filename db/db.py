@@ -1,4 +1,5 @@
 """Mongo connection helper."""
+
 # pylint: disable=mixed-line-endings
 import os
 from pymongo.mongo_client import MongoClient

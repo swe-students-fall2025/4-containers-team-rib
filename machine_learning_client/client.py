@@ -1,4 +1,5 @@
 """ML client that writes posture samples and events to MongoDB"""
+
 # pylint: disable=no-member
 
 import os
