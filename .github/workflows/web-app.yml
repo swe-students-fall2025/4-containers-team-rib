@@ -1,0 +1,33 @@
+name: web-app
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+      MONGO_DB: ${{ secrets.MONGO_DB }}
+      APP_NAME: ${{ secrets.APP_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pipenv
+          pipenv sync --dev --python $(which python)
+      - name: Lint web app
+        run: |
+          pipenv run pylint app.py db/*.py tests/test_routes.py
+      - name: Format check web app
+        run: |
+          pipenv run black --check app.py db tests
+      - name: Test web app
+        run: |
+          pipenv run pytest tests
