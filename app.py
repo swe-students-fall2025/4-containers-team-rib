@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 from flask import Flask, jsonify, render_template, request
 from pymongo import ASCENDING, DESCENDING
+from pymongo.errors import OperationFailure
 from dotenv import load_dotenv
 
 import db
@@ -26,9 +27,14 @@ def _iso(dt: datetime) -> str:
     return dt.replace(microsecond=0).isoformat() + "Z"
 
 
-# Indexes (created once at startup)
-db.samples.create_index([("ts", DESCENDING)])
-db.events.create_index([("ts", DESCENDING)])
+# Indexes (created once at startup). In test/CI environments without a
+# real MongoDB user, index creation may fail; ignore such errors so
+# tests can run against a stubbed or unauthenticated database.
+try:
+    db.samples.create_index([("ts", DESCENDING)])
+    db.events.create_index([("ts", DESCENDING)])
+except OperationFailure as exc:  # pragma: no cover
+    print(exc)
 
 
 # --- Web pages ---
