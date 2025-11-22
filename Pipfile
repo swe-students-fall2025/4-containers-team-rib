@@ -14,8 +14,11 @@ pytest-flask = "*"
 coverage = "*"
 opencv-python = "*"
 numpy = "*"
+colorama = "*"
+tomli = "*"
 
 [dev-packages]
+pytest-cov = "*"
 
 [requires]
 python_version = "3.10"
