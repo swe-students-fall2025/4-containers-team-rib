@@ -1,6 +1,8 @@
+"""Mongo connection helper."""
+# pylint: disable=mixed-line-endings
+import os
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,7 +16,6 @@ uri = (
     f"mongodb+srv://{USERNAME}:{PASSWORD}@ribs.xo4actr.mongodb.net/?appName={APP_NAME}"
 )
 
-# Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi("1"))
 db = client[MONGO_DB]
 
@@ -23,9 +24,8 @@ samples = db["samples"]
 events = db["events"]
 
 
-# Send a ping to confirm a successful connection
 try:
     client.admin.command("ping")
     print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
+except Exception as e:  # pylint: disable=broad-exception-caught
     print(e)

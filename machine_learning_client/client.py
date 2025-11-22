@@ -1,4 +1,5 @@
 """ML client that writes posture samples and events to MongoDB"""
+# pylint: disable=no-member
 
 import os
 import time
@@ -128,7 +129,7 @@ def ingest_live_sample(model):
 def run_monitoring_loop(interval=5):
     """Run the posture monitoring loop."""
     load_model()
-    model = None  # Model loading not implemented
+    model = None
     if model is None:
         print("Failed to load model. Exiting.")
         return

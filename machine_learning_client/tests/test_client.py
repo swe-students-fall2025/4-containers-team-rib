@@ -1,14 +1,19 @@
+"""Unit tests for the ML client helpers."""
+# pylint: disable=missing-function-docstring,too-few-public-methods,invalid-name,unnecessary-lambda,unused-argument,mixed-line-endings
+
 import types
 from datetime import datetime, timezone
 
-import pytest
 import numpy as np
+import pytest
+from pymongo import DESCENDING
 
 from machine_learning_client import client
-from pymongo import DESCENDING
 
 
 class _FakeCollection:
+    """Minimal in-memory collection stub."""
+
     def __init__(self):
         self.docs = []
 
@@ -27,6 +32,8 @@ class _FakeCollection:
 
 
 class _FakeDB:
+    """In-memory DB stub."""
+
     def __init__(self):
         self.samples = _FakeCollection()
         self.events = _FakeCollection()
@@ -96,7 +103,11 @@ def test_ingest_live_sample_records_exit_event(monkeypatch):
     monkeypatch.setattr(client, "db", fake_db)
     monkeypatch.setattr(client, "threshold", 0.6)
     monkeypatch.setattr(client, "get_webcam_frame", lambda: object())
-    monkeypatch.setattr(client, "predict_posture", lambda model, frame: 0.2)
+
+    def _predict_exit(_model, _frame):
+        return 0.2
+
+    monkeypatch.setattr(client, "predict_posture", _predict_exit)
 
     doc = client.ingest_live_sample(model=types.SimpleNamespace(predict=lambda f: [[0.2]]))
     assert doc is not None
@@ -112,7 +123,11 @@ def test_ingest_live_sample_records_enter_event(monkeypatch):
     monkeypatch.setattr(client, "db", fake_db)
     monkeypatch.setattr(client, "threshold", 0.6)
     monkeypatch.setattr(client, "get_webcam_frame", lambda: object())
-    monkeypatch.setattr(client, "predict_posture", lambda model, frame: 0.9)
+
+    def _predict_enter(_model, _frame):
+        return 0.9
+
+    monkeypatch.setattr(client, "predict_posture", _predict_enter)
 
     doc = client.ingest_live_sample(model=types.SimpleNamespace(predict=lambda f: [[0.9]]))
     assert doc["label"] == "slouch"
@@ -124,6 +139,7 @@ def test_get_webcam_frame_handles_closed_camera(monkeypatch):
     class _Cap:
         def isOpened(self):
             return False
+
     monkeypatch.setattr(client.cv2, "VideoCapture", lambda *_: _Cap())
     assert client.get_webcam_frame() is None
 
@@ -190,7 +206,7 @@ def test_get_webcam_frame_handles_read_failure(monkeypatch):
 def test_predict_posture_handles_index_error():
     class _BadModel:
         def predict(self, frame):
-            return [[]]  # triggers IndexError when accessing [0][0]
+            return [[]]
 
     assert client.predict_posture(_BadModel(), frame=np.zeros((1, 1))) is None
 

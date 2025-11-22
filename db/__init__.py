@@ -1,3 +1,5 @@
-from .db import client, db as db, samples, events
+"""Database helpers exported at package level."""
 
-__all__ = ["client", "db", "samples", "events"]
+from .db import db, samples, events
+
+__all__ = ["db", "samples", "events"]

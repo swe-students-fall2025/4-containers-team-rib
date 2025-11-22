@@ -1,3 +1,5 @@
+"""Route tests for the Flask app."""
+# pylint: disable=missing-function-docstring,redefined-outer-name
 import json
 from datetime import datetime, timedelta
 import pytest
@@ -27,7 +29,11 @@ def test_latest_none(client):
 def test_ingest_and_latest(client):
     # inject a sample
     payload = {"slouch_prob": 0.7}
-    res = client.post("/api/dev/ingest-sample", data=json.dumps(payload), content_type="application/json")
+    res = client.post(
+        "/api/dev/ingest-sample",
+        data=json.dumps(payload),
+        content_type="application/json",
+    )
     assert res.status_code == 200
 
     res2 = client.get("/api/latest")
@@ -36,7 +42,6 @@ def test_ingest_and_latest(client):
     assert data["latest"]["is_slouch"] is True
 
 def test_metrics_series(client):
-    # create a couple of samples within last 5 minutes
     now = datetime.utcnow()
     db.samples.insert_many([
         {"ts": now - timedelta(minutes=2), "slouch_prob": 0.2, "label": "good"},
